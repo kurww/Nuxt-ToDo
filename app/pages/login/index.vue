@@ -3,6 +3,11 @@ import { ArrowLeft } from "lucide-vue-next";
 
 const email = ref("");
 const password = ref("");
+const { errorMessage, isLoading, handleLogin } = useAuth();
+
+const onSubmit = () => {
+  handleLogin({ email: email.value, password: password.value });
+};
 </script>
 
 <template>
@@ -17,7 +22,10 @@ const password = ref("");
         <div class="text-center mb-7 space-y-5">
           <h1 class="text-2xl font-bold">Welcome Back!</h1>
         </div>
-        <form class="flex flex-col items-center text-center space-y-7">
+        <form
+          @submit.prevent="onSubmit"
+          class="flex flex-col items-center text-center space-y-7"
+        >
           <div class="flex flex-col items-center space-y-4">
             <img class="md:h-44 w-auto" src="/standing.png" />
             <TextInput
@@ -37,12 +45,15 @@ const password = ref("");
             Forgot Password?
             <NuxtLink to="/register" class="text-emerald-600">Reset</NuxtLink>
           </p>
-          <NuxtLink
-            to="/dashboard/create"
-            class="w-[70%] md:w-[50%] py-2 bg-emerald-600 text-white font-bold"
+          <button
+            type="submit"
+            :disabled="isLoading"
+            class="w-[70%] md:w-[50%] py-2 bg-emerald-600 text-white font-bold disabled:opacity-50 :hover:bg-emerald-700 rounded-lg"
           >
-            Sign In
-          </NuxtLink>
+            {{ isLoading ? "Signing In..." : "Sign In" }}
+          </button>
+          <!-- Display error message if login fails -->
+          <p v-if="errorMessage" class="text-red-500">{{ errorMessage }}</p>
         </form>
       </div>
 
