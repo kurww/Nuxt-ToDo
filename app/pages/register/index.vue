@@ -1,6 +1,12 @@
 <script setup>
 import { ArrowLeft } from "lucide-vue-next";
+
+const fullName = ref("");
+const email = ref("");
+const password = ref("");
+const confirmPassword = ref("");
 </script>
+
 <template>
   <div class="min-h-screen bg-gray-200">
     <NuxtLink class="absolute top-10 left-5 border-3 rounded-full z-20" to="/">
@@ -16,28 +22,28 @@ import { ArrowLeft } from "lucide-vue-next";
         </div>
         <form class="flex flex-col items-center text-center space-y-20">
           <div class="flex flex-col items-center space-y-4">
-            <input
+            <TextInput
+              v-model="fullName"
               type="text"
               placeholder="Full Name"
-              class="rounded-2xl bg-white text-black placeholder:text-gray-600 font-bold py-3 px-4 w-80"
               maxlength="100"
             />
-            <input
+            <TextInput
+              v-model="email"
               type="text"
               placeholder="Email Address"
-              class="rounded-2xl bg-white text-black placeholder:text-gray-600 font-bold py-3 px-4 w-80"
               maxlength="100"
             />
-            <input
+            <TextInput
+              v-model="password"
               type="password"
               placeholder="Password"
-              class="rounded-2xl bg-white text-black placeholder:text-gray-600 font-bold py-3 px-4 w-80"
               maxlength="100"
             />
-            <input
+            <TextInput
+              v-model="confirmPassword"
               type="password"
               placeholder="Confirm Password"
-              class="rounded-2xl bg-white text-black placeholder:text-gray-600 font-bold py-3 px-4 w-80"
               maxlength="100"
             />
           </div>

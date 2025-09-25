@@ -1,9 +1,15 @@
 <script setup>
 import { ArrowLeft } from "lucide-vue-next";
+
+const task = ref("");
 </script>
+
 <template>
   <div class="min-h-screen bg-gray-200">
-    <NuxtLink class="absolute top-10 left-5 border-3 rounded-full z-20" to="/">
+    <NuxtLink
+      class="absolute top-10 left-5 border-3 rounded-full z-20"
+      to="/dashboard"
+    >
       <ArrowLeft :stroke-width="3" />
     </NuxtLink>
     <div
@@ -19,9 +25,10 @@ import { ArrowLeft } from "lucide-vue-next";
             <p class="text-gray-500 font-bold">
               Add what you want to do later on.
             </p>
-            <input
+            <TextInput
+              v-model="task"
               type="text"
-              class="rounded-2xl bg-white text-black placeholder:text-gray-600 font-bold py-3 px-4 w-80"
+              placeholder="Enter your task"
               maxlength="100"
             />
           </div>
