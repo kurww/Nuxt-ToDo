@@ -2,10 +2,23 @@
 import { ref, computed, onMounted, watch } from "vue";
 import { Plus } from "lucide-vue-next";
 
+definePageMeta({
+  middleware: "auth",
+});
+
 // Reactive data
 const todos = ref([]);
 const newTodo = ref("");
 const filter = ref("all"); // 'all', 'active', 'completed'
+const { user, logout } = useAuth();
+
+// Load todos from localStorage on mount (keep local for todos, as they're client-side)
+onMounted(() => {
+  const savedTodos = localStorage.getItem("nuxt-todos");
+  if (savedTodos) {
+    todos.value = JSON.parse(savedTodos);
+  }
+});
 
 // Computed properties
 const filteredTodos = computed(() => {
@@ -61,14 +74,6 @@ const toggleAll = () => {
   });
 };
 
-// Load todos from localStorage on mount
-onMounted(() => {
-  const savedTodos = localStorage.getItem("nuxt-todos");
-  if (savedTodos) {
-    todos.value = JSON.parse(savedTodos);
-  }
-});
-
 // Save todos to localStorage whenever todos change
 watch(
   todos,
@@ -86,7 +91,7 @@ watch(
     >
       <div class="max-w-md mx-auto">
         <!-- Header -->
-        <div class="text-center mt-8 flex flex-col gap-y-6">
+        <div class="text-center mt-8 flex flex-col gap-y-6 items-center">
           <img
             src="/man.jpeg"
             alt="Man"
@@ -94,7 +99,16 @@ watch(
             height="96"
             class="w-24 h-24 mx-auto rounded-full object-cover"
           />
-          <h1 class="text-2xl font-bold text-gray-800 mb-2">Welcome Name</h1>
+          <h1 class="text-2xl font-bold text-gray-800 mb-2">
+            Welcome {{ user?.name || "User" }}
+          </h1>
+          <!-- Add logout button -->
+          <button
+            @click="logout"
+            class="text-sm text-black bg-white px-4 py-2 w-24 rounded-lg z-10 hover:bg-red-700 hover:ring ring-black ring-offset-2 hover:text-white transition-colors font-medium"
+          >
+            Logout
+          </button>
         </div>
       </div>
       <div
@@ -144,7 +158,10 @@ watch(
           </form>
 
           <!-- Todo List -->
-          <div class="mb-6 space-y-2 h-48 overflow-scroll">
+          <div
+            class="mb-6 space-y-2 h-48 overflow-scroll"
+            v-if="todos.length > 0"
+          >
             <div
               v-for="todo in filteredTodos"
               :key="todo.id"

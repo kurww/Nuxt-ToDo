@@ -1,10 +1,27 @@
 <script setup>
 import { ArrowLeft } from "lucide-vue-next";
 
+definePageMeta({
+  middleware: "guest",
+});
+
 const fullName = ref("");
 const email = ref("");
 const password = ref("");
 const confirmPassword = ref("");
+const { errorMessage, isLoading, handleRegister } = useAuth();
+
+const onSubmit = () => {
+  if (password.value !== confirmPassword.value) {
+    errorMessage.value = "Passwords do not match.";
+    return;
+  }
+  handleRegister({
+    name: fullName.value,
+    email: email.value,
+    password: password.value,
+  });
+};
 </script>
 
 <template>
@@ -20,7 +37,10 @@ const confirmPassword = ref("");
           <h1 class="text-2xl font-bold">Welcome Onboard!</h1>
           <p class="text-gray-600">Let's help you meet up your task</p>
         </div>
-        <form class="flex flex-col items-center text-center space-y-20">
+        <form
+          @submit.prevent="onSubmit"
+          class="flex flex-col items-center text-center space-y-20"
+        >
           <div class="flex flex-col items-center space-y-4">
             <TextInput
               v-model="fullName"
@@ -47,12 +67,15 @@ const confirmPassword = ref("");
               maxlength="100"
             />
           </div>
-          <NuxtLink
-            to="/register"
-            class="w-[70%] md:w-[50%] py-2 bg-emerald-600 text-white font-bold"
+          <button
+            type="submit"
+            :disabled="isLoading"
+            class="w-[70%] md:w-[50%] py-2 bg-emerald-600 text-white font-bold disabled:opacity-50"
           >
-            Get Started
-          </NuxtLink>
+            {{ isLoading ? "Registering..." : "Get Started" }}
+          </button>
+          <!-- Display error message if register fails -->
+          <p v-if="errorMessage" class="text-red-500">{{ errorMessage }}</p>
         </form>
       </div>
 

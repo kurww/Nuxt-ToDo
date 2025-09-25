@@ -1,6 +1,10 @@
 <script setup>
 import { ArrowLeft } from "lucide-vue-next";
 
+definePageMeta({
+  middleware: "guest",
+});
+
 const email = ref("");
 const password = ref("");
 const { errorMessage, isLoading, handleLogin } = useAuth();

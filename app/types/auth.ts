@@ -3,6 +3,12 @@ export interface LoginRequest {
   password: string;
 }
 
+export interface RegisterRequest {
+  name: string;
+  email: string;
+  password: string;
+}
+
 export interface User {
   id: number;
   name: string;
@@ -15,6 +21,15 @@ export interface LoginResponse {
   validation: null;
   data: {
     access_token: string;
+    user: User;
+  };
+}
+
+export interface RegisterResponse {
+  status: number;
+  message: string;
+  validation: null;
+  data: {
     user: User;
   };
 }

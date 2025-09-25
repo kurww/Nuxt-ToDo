@@ -1,9 +1,16 @@
-import { login } from "~/services/authService";
-import type { LoginRequest, LoginResponse } from "~/types/auth";
+import { login, register } from "~/services/authService";
+import type {
+  LoginRequest,
+  LoginResponse,
+  RegisterRequest,
+  RegisterResponse,
+} from "~/types/auth";
 
 export const useAuth = () => {
   const errorMessage = ref("");
   const isLoading = ref(false);
+  const token = useCookie("access_token");
+  const user = useCookie("user");
 
   const handleLogin = async (data: LoginRequest) => {
     isLoading.value = true;
@@ -11,8 +18,8 @@ export const useAuth = () => {
     try {
       const response: LoginResponse = await login(data);
       if (response.status === 200) {
-        localStorage.setItem("access_token", response.data.access_token);
-        localStorage.setItem("user", JSON.stringify(response.data.user));
+        token.value = response.data.access_token;
+        user.value = response.data.user;
         navigateTo("/dashboard");
       }
     } catch (error) {
@@ -22,9 +29,34 @@ export const useAuth = () => {
     }
   };
 
+  const handleRegister = async (data: RegisterRequest) => {
+    isLoading.value = true;
+    errorMessage.value = "";
+    try {
+      const response: RegisterResponse = await register(data);
+      if (response.status === 200) {
+        // After register, redirect to login or auto-login
+        navigateTo("/login");
+      }
+    } catch (error) {
+      errorMessage.value = "Registration failed. Please try again.";
+    } finally {
+      isLoading.value = false;
+    }
+  };
+
+  const logout = () => {
+    token.value = null;
+    user.value = null;
+    navigateTo("/login");
+  };
+
   return {
     errorMessage,
     isLoading,
     handleLogin,
+    handleRegister,
+    logout,
+    user,
   };
 };
