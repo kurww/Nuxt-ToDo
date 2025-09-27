@@ -1,20 +1,18 @@
-export interface Tasklist {
+import type { Task } from "~/types/task";
+
+export interface TaskList {
   id: number;
   title: string;
+  userId: number;
+  tasks: Task[];
 }
 
-export interface TasklistRequest {
+export interface TaskListRequest {
   title: string;
 }
 
-export interface TasklistResponse {
+export interface TaskListResponse {
   status: number;
   message: string;
-  data: Tasklist;
-}
-
-export interface TasklistsResponse {
-  status: number;
-  message: string;
-  data: Tasklist[];
+  data: TaskList;
 }

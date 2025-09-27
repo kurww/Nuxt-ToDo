@@ -1,4 +1,8 @@
-import type { TaskRequest, TaskResponse, TasksResponse } from "~/types/task";
+import type {
+  TaskRequest,
+  TaskResponse,
+  TaskUpdateRequest,
+} from "~/types/task";
 
 export const createTask = async (
   data: TaskRequest,
@@ -6,24 +10,39 @@ export const createTask = async (
 ): Promise<TaskResponse> => {
   const response = await fetch("http://localhost:5713/tasks", {
     method: "POST",
-    headers: { Authorization: `Bearer ${token}` },
-    body: data,
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(data),
   });
+
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+
   return await response.json();
 };
 
-export const getTasks = async (
-  tasklistId: number,
+export const updateTask = async (
+  id: number,
+  data: Partial<TaskUpdateRequest>,
   token: string
-): Promise<TasksResponse> => {
-  const response = await fetch(
-    `http://localhost:5713/tasklists/${tasklistId}/tasks`,
-    {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    }
-  );
+): Promise<TaskResponse> => {
+  const response = await fetch(`http://localhost:5713/tasks/${id}`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+
   return await response.json();
 };
+
+

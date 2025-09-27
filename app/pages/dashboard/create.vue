@@ -8,11 +8,23 @@ definePageMeta({
 const task = ref("");
 // Use the composable instead of direct logic
 const { addTask, isLoading, errorMessage } = useTask();
+const { currentTasklist, fetchCurrentTaskList } = useTaskList();
+
+// Ensure we have a current tasklist
+onMounted(async () => {
+  await fetchCurrentTaskList();
+});
 
 const onSubmit = () => {
-  if (!task.value.trim()) return;
-  // Assuming TaskRequest is { title: string }; add tasklistId if needed
-  addTask({ title: task.value });
+  if (!currentTasklist.value) {
+    errorMessage.value = "No task list available";
+    return;
+  }
+  addTask({
+    title: task.value,
+    completed: false,
+    taskListId: currentTasklist.value.id,
+  });
 };
 </script>
 

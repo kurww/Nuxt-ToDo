@@ -35,8 +35,9 @@ export const useAuth = () => {
     try {
       const response: RegisterResponse = await register(data);
       if (response.status === 200) {
-        // After register, redirect to login or auto-login
-        navigateTo("/login");
+        token.value = response.data.access_token;
+        user.value = response.data.user;
+        navigateTo("/dashboard");
       }
     } catch (error) {
       errorMessage.value = "Registration failed. Please try again.";

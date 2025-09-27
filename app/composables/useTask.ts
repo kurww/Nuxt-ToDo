@@ -1,44 +1,51 @@
-import { createTask } from "~/services/taskService"; // Add getTasks if missing
+import { createTask, updateTask } from "~/services/taskService";
 import { useTaskList } from "~/composables/useTaskList";
-import type { Task, TaskRequest, Tasklist } from "~/types/task";
+import type {
+  Task,
+  TaskRequest,
+  TaskResponse,
+  TaskUpdateRequest,
+} from "~/types/task";
 
 export const useTask = () => {
   const tasks = ref<Task[]>([]);
   const isLoading = ref(false);
   const errorMessage = ref("");
   const { token } = useAuth();
-  const { currentTasklist, fetchCurrentTasklist } = useTaskList();
+  const { currentTasklist, fetchCurrentTaskList } = useTaskList();
 
   const addTask = async (data: TaskRequest) => {
     if (!token.value) return;
     isLoading.value = true;
     errorMessage.value = "";
     try {
-      // Ensure a tasklist exists
-      if (!currentTasklist.value) {
-        await fetchCurrentTasklist();
+      const response: TaskResponse = await createTask(data, token.value);
+      if (response.status === 201 || response.status === 200) {
+        navigateTo("/dashboard");
+      } else {
+        errorMessage.value = response.message || "Failed to create task";
       }
-      // Add tasklistId to data
-      const taskData = { ...data, tasklistId: currentTasklist.value!.id };
-      await createTask(taskData, token.value);
-      await fetchCurrentTasklist(); // Refresh tasks
-      navigateTo("/dashboard");
-    } catch (error) {
-      errorMessage.value = "Failed to create task. Please try again.";
+    } catch (error: any) {
+      errorMessage.value = error?.message || "Failed to create task";
     } finally {
       isLoading.value = false;
     }
   };
 
-  const fetchTasks = async () => {
-    if (!token.value || !currentTasklist.value) return;
+  const updateTaskStatus = async (id: number, data: TaskUpdateRequest) => {
+    if (!token.value) return;
     isLoading.value = true;
     errorMessage.value = "";
     try {
-      const response = await getTasks(currentTasklist.value.id, token.value);
-      tasks.value = response.data;
-    } catch (error) {
-      errorMessage.value = "Failed to load tasks. Please try again.";
+      const response: TaskResponse = await updateTask(id, data, token.value); // Now calls the service function
+      if (response.status === 200 || response.status === 201) {
+        // Refresh the tasklist to sync with server
+        await fetchCurrentTaskList();
+      } else {
+        errorMessage.value = response.message || "Failed to update task";
+      }
+    } catch (error: any) {
+      errorMessage.value = error?.message || "Failed to update task";
     } finally {
       isLoading.value = false;
     }
@@ -49,6 +56,6 @@ export const useTask = () => {
     isLoading: readonly(isLoading),
     errorMessage: readonly(errorMessage),
     addTask,
-    fetchTasks,
+    updateTaskStatus,
   };
 };

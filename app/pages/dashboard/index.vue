@@ -12,32 +12,40 @@ const {
   currentTasklist,
   isLoading: tasklistLoading,
   errorMessage: tasklistError,
-  fetchCurrentTasklist,
+  fetchTaskList,
 } = useTaskList();
+
 const {
-  tasks,
   isLoading: taskLoading,
   errorMessage: taskError,
-  fetchTasks,
+  updateTaskStatus,
 } = useTask();
 
-// Fetch tasklist and tasks on mount
+const toggleTask = async (id) => {
+  const task = tasks.value.find((t) => t.id === id);
+  if (!task) return;
+
+  const originalCompleted = task.completed; // Store original state
+  task.completed = !task.completed; // Optimistic update
+
+  await updateTaskStatus(id, { completed: task.completed });
+};
+
+
+
+// Fetch tasklists on mount (which includes tasks)
 onMounted(async () => {
-  await fetchCurrentTasklist();
-  await fetchTasks();
+  await fetchTaskList();
 });
 
-// Computed properties for filtering (adapt to tasks)
-const filter = ref("all"); // 'all', 'active', 'completed'
-const filteredTasks = computed(() => {
-  switch (filter.value) {
-    case "active":
-      return tasks.value.filter((task) => !task.completed);
-    case "completed":
-      return tasks.value.filter((task) => task.completed);
-    default:
-      return tasks.value;
-  }
+// Computed properties for tasks from current tasklist
+const tasks = computed(() => {
+  const taskList = currentTasklist.value?.tasks || [];
+  return [...taskList].sort((a, b) => {
+    if (a.completed && !b.completed) return -1; // a (completed) comes before b (incomplete)
+    if (!a.completed && b.completed) return 1; // b (completed) comes before a (incomplete)
+    return 0;
+  });
 });
 
 const activeCount = computed(
@@ -46,13 +54,6 @@ const activeCount = computed(
 const completedCount = computed(
   () => tasks.value.filter((task) => task.completed).length
 );
-
-// Methods (adapt to tasks; add toggle, delete if needed)
-const toggleTask = (id) => {
-  // Implement toggle via API if available; for now, local update
-  const task = tasks.value.find((t) => t.id === id);
-  if (task) task.completed = !task.completed;
-};
 </script>
 
 <template>
@@ -80,13 +81,6 @@ const toggleTask = (id) => {
           <h1 class="text-2xl font-bold text-gray-800 mb-2">
             Welcome {{ user?.name || "User" }}
           </h1>
-          <NuxtLink
-            to="/dashboard/create"
-            class="flex items-center gap-2 bg-black text-white px-4 py-2 rounded-full hover:bg-white hover:text-black transition-colors font-medium z-10"
-          >
-            <Plus :size="20" :stroke-width="3" />
-            Add Task
-          </NuxtLink>
         </div>
       </div>
       <div
@@ -112,24 +106,32 @@ const toggleTask = (id) => {
     </div>
     <div class="min-h-1/4 py-4 px-4 z-20">
       <div class="max-w-md mx-auto min-h-">
-        <h1 class="text-xl font-bold text-gray-800 mb-4">
-          Tasks in {{ currentTasklist?.title || "My Tasks" }}
-        </h1>
+        <h1 class="text-xl font-bold text-gray-800 mb-4">Todo Tasks.</h1>
         <!-- Loading/Error -->
-        <div v-if="tasklistLoading || taskLoading" class="text-center py-12">
+        <div v-if="tasklistLoading" class="text-center py-12">
           <p class="text-gray-500">Loading...</p>
         </div>
-        <p v-if="tasklistError || taskError" class="text-red-500 text-center">
-          {{ tasklistError || taskError }}
+        <p v-if="tasklistError" class="text-red-500 text-center">
+          {{ tasklistError }}
         </p>
+        <div v-if="taskError" class="text-red-500 text-center mb-4">
+          {{ taskError }}
+        </div>
         <!-- Task List -->
         <div class="bg-white p-6 rounded-4xl shadow-md">
-          <div
-            v-if="filteredTasks.length > 0"
-            class="space-y-2 h-48 overflow-scroll"
-          >
+          <div class="flex justify-between items-center mb-4">
+            <h2 class="text-lg font-medium text-gray-400">Diary Task.</h2>
+
+            <NuxtLink
+              to="/dashboard/create"
+              class="flex items-center bg-black mr-4 text-white px-2 py-2 rounded-full hover:bg-white hover:text-black transition-colors font-medium z-10"
+            >
+              <Plus :size="20" :stroke-width="3" />
+            </NuxtLink>
+          </div>
+          <div v-if="tasks.length > 0" class="space-y-2 h-48 overflow-scroll">
             <div
-              v-for="task in filteredTasks"
+              v-for="task in tasks"
               :key="task.id"
               class="bg-white overflow-hidden"
             >
@@ -147,14 +149,7 @@ const toggleTask = (id) => {
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M5 13l4 4L19 7"
-                    ></path>
-                  </svg>
+                  ></svg>
                 </button>
                 <div class="flex-1 min-w-0">
                   <p
@@ -166,6 +161,7 @@ const toggleTask = (id) => {
                     {{ task.title }}
                   </p>
                 </div>
+                
               </div>
             </div>
           </div>

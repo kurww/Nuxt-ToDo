@@ -30,6 +30,7 @@ export interface RegisterResponse {
   message: string;
   validation: null;
   data: {
+    access_token: string;
     user: User;
   };
 }

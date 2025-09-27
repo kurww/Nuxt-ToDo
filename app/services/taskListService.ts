@@ -1,13 +1,13 @@
 import type {
-  TasklistRequest,
-  TasklistResponse,
-  TasklistsResponse,
+  TaskListRequest,
+  TaskListResponse,
+  TaskListsResponse,
 } from "~/types/task";
 
-export const createTasklist = async (
-  data: TasklistRequest,
+export const createTaskList = async (
+  data: TaskListRequest,
   token: string
-): Promise<TasklistResponse> => {
+): Promise<TaskListResponse> => {
   return await $fetch("http://localhost:5713/tasklists", {
     method: "POST",
     headers: { Authorization: `Bearer ${token}` },
@@ -15,9 +15,7 @@ export const createTasklist = async (
   });
 };
 
-export const getTasklists = async (
-  token: string
-): Promise<TasklistsResponse> => {
+export const getTaskList = async (token: string): Promise<TaskListResponse> => {
   return await $fetch("http://localhost:5713/tasklists", {
     method: "GET",
     headers: { Authorization: `Bearer ${token}` },

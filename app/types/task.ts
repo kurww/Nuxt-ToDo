@@ -1,25 +1,28 @@
 export interface Task {
-  id: string;
+  id: number;
   title: string;
-  tasklistId: number;
+  taskListId: number;
   completed: boolean;
 }
 
 export interface TaskRequest {
   title: string;
-  tasklistId: number;
   completed: boolean;
+  taskListId: number;
 }
 
 export interface TaskResponse {
-  id: string;
-  title: string;
-  tasklistId: number;
-  completed: boolean;
-}
-
-export interface TasksResponse {
   status: number;
   message: string;
-  data: Task[];
+  validation: null;
+  data: {
+    id: number;
+    title: string;
+    taskListId: number;
+    completed: boolean;
+  };
+}
+
+export interface TaskUpdateRequest {
+  completed: boolean;
 }
