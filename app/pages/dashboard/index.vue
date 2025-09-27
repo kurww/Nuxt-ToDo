@@ -1,91 +1,69 @@
 <script setup>
-import { ref, computed, onMounted, watch } from "vue";
 import { Plus } from "lucide-vue-next";
+import { ArrowLeft } from "lucide-vue-next";
 
 definePageMeta({
   middleware: "auth",
 });
 
-// Reactive data
-const todos = ref([]);
-const newTodo = ref("");
-const filter = ref("all"); // 'all', 'active', 'completed'
+// Use composables
 const { user, logout } = useAuth();
+const {
+  currentTasklist,
+  isLoading: tasklistLoading,
+  errorMessage: tasklistError,
+  fetchCurrentTasklist,
+} = useTaskList();
+const {
+  tasks,
+  isLoading: taskLoading,
+  errorMessage: taskError,
+  fetchTasks,
+} = useTask();
 
-// Load todos from localStorage on mount (keep local for todos, as they're client-side)
-onMounted(() => {
-  const savedTodos = localStorage.getItem("nuxt-todos");
-  if (savedTodos) {
-    todos.value = JSON.parse(savedTodos);
-  }
+// Fetch tasklist and tasks on mount
+onMounted(async () => {
+  await fetchCurrentTasklist();
+  await fetchTasks();
 });
 
-// Computed properties
-const filteredTodos = computed(() => {
+// Computed properties for filtering (adapt to tasks)
+const filter = ref("all"); // 'all', 'active', 'completed'
+const filteredTasks = computed(() => {
   switch (filter.value) {
     case "active":
-      return todos.value.filter((todo) => !todo.completed);
+      return tasks.value.filter((task) => !task.completed);
     case "completed":
-      return todos.value.filter((todo) => todo.completed);
+      return tasks.value.filter((task) => task.completed);
     default:
-      return todos.value;
+      return tasks.value;
   }
 });
 
 const activeCount = computed(
-  () => todos.value.filter((todo) => !todo.completed).length
+  () => tasks.value.filter((task) => !task.completed).length
 );
 const completedCount = computed(
-  () => todos.value.filter((todo) => todo.completed).length
+  () => tasks.value.filter((task) => task.completed).length
 );
 
-// Methods
-const addTodo = () => {
-  if (newTodo.value.trim()) {
-    todos.value.push({
-      id: Date.now(),
-      text: newTodo.value.trim(),
-      completed: false,
-      createdAt: new Date(),
-    });
-    newTodo.value = "";
-  }
+// Methods (adapt to tasks; add toggle, delete if needed)
+const toggleTask = (id) => {
+  // Implement toggle via API if available; for now, local update
+  const task = tasks.value.find((t) => t.id === id);
+  if (task) task.completed = !task.completed;
 };
-
-const toggleTodo = (id) => {
-  const todo = todos.value.find((t) => t.id === id);
-  if (todo) {
-    todo.completed = !todo.completed;
-  }
-};
-
-const deleteTodo = (id) => {
-  todos.value = todos.value.filter((t) => t.id !== id);
-};
-
-const clearCompleted = () => {
-  todos.value = todos.value.filter((t) => !t.completed);
-};
-
-const toggleAll = () => {
-  const allCompleted = todos.value.every((todo) => todo.completed);
-  todos.value.forEach((todo) => {
-    todo.completed = !allCompleted;
-  });
-};
-
-// Save todos to localStorage whenever todos change
-watch(
-  todos,
-  (newTodos) => {
-    localStorage.setItem("nuxt-todos", JSON.stringify(newTodos));
-  },
-  { deep: true }
-);
 </script>
 
 <template>
   <div class="flex flex-col min-h-screen justify-between bg-gray-100">
+    <button
+      @click="logout"
+      class="absolute top-10 left-5 border-3 rounded-full z-20"
+      to="/"
+    >
+      <ArrowLeft :stroke-width="3" />
+    </button>
     <div
       class="min-h-1/4 bg-emerald-400 py-4 px-4 relative overflow-visible text-emerald-400"
     >
@@ -102,13 +80,13 @@ watch(
           <h1 class="text-2xl font-bold text-gray-800 mb-2">
             Welcome {{ user?.name || "User" }}
           </h1>
-          <!-- Add logout button -->
-          <button
-            @click="logout"
-            class="text-sm text-black bg-white px-4 py-2 w-24 rounded-lg z-10 hover:bg-red-700 hover:ring ring-black ring-offset-2 hover:text-white transition-colors font-medium"
+          <NuxtLink
+            to="/dashboard/create"
+            class="flex items-center gap-2 bg-black text-white px-4 py-2 rounded-full hover:bg-white hover:text-black transition-colors font-medium z-10"
           >
-            Logout
-          </button>
+            <Plus :size="20" :stroke-width="3" />
+            Add Task
+          </NuxtLink>
         </div>
       </div>
       <div
@@ -117,7 +95,6 @@ watch(
       <div
         class="absolute -top-15 -left-25 z-10 h-40 w-40 rounded-full bg-emerald-600 opacity-50"
       ></div>
-
       <!-- triangle bottom -->
       <svg
         class="absolute left-0 right-0 -bottom-6 w-full h-12"
@@ -135,49 +112,37 @@ watch(
     </div>
     <div class="min-h-1/4 py-4 px-4 z-20">
       <div class="max-w-md mx-auto min-h-">
-        <h1 class="text-xl font-bold text-gray-800 mb-4">Todo Tasks.</h1>
-        <!-- Add Todo Form -->
+        <h1 class="text-xl font-bold text-gray-800 mb-4">
+          Tasks in {{ currentTasklist?.title || "My Tasks" }}
+        </h1>
+        <!-- Loading/Error -->
+        <div v-if="tasklistLoading || taskLoading" class="text-center py-12">
+          <p class="text-gray-500">Loading...</p>
+        </div>
+        <p v-if="tasklistError || taskError" class="text-red-500 text-center">
+          {{ tasklistError || taskError }}
+        </p>
+        <!-- Task List -->
         <div class="bg-white p-6 rounded-4xl shadow-md">
-          <form @submit.prevent="addTodo" class="mb-6">
-            <div class="flex gap-2">
-              <input
-                v-model="newTodo"
-                type="text"
-                placeholder="Diary Task."
-                class="flex-1 pt-3 border-b-2 border-gray-300 focus:outline-none focus:border-transparent text-lg font-bold placeholder-gray-400"
-                maxlength="100"
-              />
-              <button
-                type="submit"
-                class="px-2 py-2 bg-black rounded-full text-white hover:bg-white hover:text-black focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2 transition-colors font-medium"
-                :disabled="!newTodo.trim()"
-              >
-                <Plus :size="25" :stroke-width="3" />
-              </button>
-            </div>
-          </form>
-
-          <!-- Todo List -->
           <div
-            class="mb-6 space-y-2 h-48 overflow-scroll"
-            v-if="todos.length > 0"
+            v-if="filteredTasks.length > 0"
+            class="space-y-2 h-48 overflow-scroll"
           >
             <div
-              v-for="todo in filteredTodos"
-              :key="todo.id"
+              v-for="task in filteredTasks"
+              :key="task.id"
               class="bg-white overflow-hidden"
             >
               <div class="flex items-center">
-                <!-- Checkbox -->
                 <button
-                  @click="toggleTodo(todo.id)"
+                  @click="toggleTask(task.id)"
                   class="flex-shrink-0 w-5 h-5 border-2 border-black flex items-center justify-center mr-4 transition-colors"
                   :class="
-                    todo.completed ? 'bg-emerald-400 ' : 'hover:border-gray-400'
+                    task.completed ? 'bg-emerald-400' : 'hover:border-gray-400'
                   "
                 >
                   <svg
-                    v-if="todo.completed"
+                    v-if="task.completed"
                     class="w-4 h-4 text-white"
                     fill="none"
                     stroke="currentColor"
@@ -191,50 +156,21 @@ watch(
                     ></path>
                   </svg>
                 </button>
-
-                <!-- Todo Text -->
                 <div class="flex-1 min-w-0">
                   <p
                     :class="[
                       'text-lg break-words',
-                      todo.completed ? 'text-gray-500 ' : 'text-gray-800',
+                      task.completed ? 'text-gray-500' : 'text-gray-800',
                     ]"
                   >
-                    {{ todo.text }}
+                    {{ task.title }}
                   </p>
                 </div>
               </div>
             </div>
           </div>
-
           <!-- Empty State -->
-          <div
-            v-if="filteredTodos.length === 0 && todos.length > 0"
-            class="text-center py-8"
-          >
-            <div class="text-gray-400 mb-4">
-              <svg
-                class="w-16 h-16 mx-auto"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="1"
-                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                ></path>
-              </svg>
-            </div>
-            <p class="text-gray-500 text-lg">
-              {{
-                filter === "active" ? "No active tasks" : "No completed tasks"
-              }}
-            </p>
-          </div>
-
-          <div v-if="todos.length === 0" class="text-center py-12">
+          <div v-else class="text-center py-12">
             <div class="text-gray-400 mb-4">
               <svg
                 class="w-20 h-20 mx-auto"
@@ -250,7 +186,7 @@ watch(
                 ></path>
               </svg>
             </div>
-            <h3 class="text-xl font-medium text-gray-700 mb-2">No todos yet</h3>
+            <h3 class="text-xl font-medium text-gray-700 mb-2">No tasks yet</h3>
             <p class="text-gray-500">Add your first task to get started!</p>
           </div>
         </div>

@@ -58,5 +58,6 @@ export const useAuth = () => {
     handleRegister,
     logout,
     user,
+    token,
   };
 };
