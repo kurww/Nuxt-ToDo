@@ -1,4 +1,8 @@
-import { createTask, updateTask } from "~/services/taskService";
+import {
+  createTask,
+  updateTask,
+  deleteTask as deleteTaskService,
+} from "~/services/taskService";
 import { useTaskList } from "~/composables/useTaskList";
 import type {
   Task,
@@ -51,11 +55,31 @@ export const useTask = () => {
     }
   };
 
+  const deleteTask = async (id: number) => {
+    if (!token.value) return;
+    isLoading.value = true;
+    errorMessage.value = "";
+    try {
+      const response: TaskResponse = await deleteTaskService(id, token.value); // Now calls the service function
+      if (response.status === 200 || response.status === 201) {
+        // Refresh the tasklist to sync with server
+        await fetchCurrentTaskList();
+      } else {
+        errorMessage.value = response.message || "Failed to delete task";
+      }
+    } catch (error: any) {
+      errorMessage.value = error?.message || "Failed to delete task";
+    } finally {
+      isLoading.value = false;
+    }
+  };
+
   return {
     tasks: readonly(tasks),
     isLoading: readonly(isLoading),
     errorMessage: readonly(errorMessage),
     addTask,
     updateTaskStatus,
+    deleteTask,
   };
 };

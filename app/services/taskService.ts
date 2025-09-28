@@ -45,4 +45,21 @@ export const updateTask = async (
   return await response.json();
 };
 
+export const deleteTask = async (
+  id: number,
+  token: string
+): Promise<TaskResponse> => {
+  const response = await fetch(`http://localhost:5713/tasks/${id}`, {
+    method: "DELETE",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+  });
 
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+
+  return await response.json();
+};

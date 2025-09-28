@@ -19,35 +19,72 @@ const {
   isLoading: taskLoading,
   errorMessage: taskError,
   updateTaskStatus,
+  deleteTask,
 } = useTask();
 
-const toggleTask = async (id) => {
-  const task = tasks.value.find((t) => t.id === id);
-  if (!task) return;
+/* --- Added reactive localTasks and watcher to sync with currentTasklist --- */
+const localTasks = ref([]); // Array<Task> inferred
 
-  const originalCompleted = task.completed; // Store original state
-  task.completed = !task.completed; // Optimistic update
+watch(
+  currentTasklist,
+  (newVal) => {
+    localTasks.value = newVal?.tasks ? [...newVal.tasks] : [];
+  },
+  { immediate: true }
+);
 
-  await updateTaskStatus(id, { completed: task.completed });
-};
-
-
-
-// Fetch tasklists on mount (which includes tasks)
-onMounted(async () => {
-  await fetchTaskList();
-});
-
-// Computed properties for tasks from current tasklist
+/* --- Use localTasks for UI, keep sorting logic via computed --- */
 const tasks = computed(() => {
-  const taskList = currentTasklist.value?.tasks || [];
-  return [...taskList].sort((a, b) => {
-    if (a.completed && !b.completed) return -1; // a (completed) comes before b (incomplete)
-    if (!a.completed && b.completed) return 1; // b (completed) comes before a (incomplete)
+  return [...localTasks.value].sort((a, b) => {
+    if (a.completed && !b.completed) return -1;
+    if (!a.completed && b.completed) return 1;
     return 0;
   });
 });
 
+/* --- Toggle task (optimistic update + revert on failure) --- */
+const toggleTask = async (id) => {
+  const idx = localTasks.value.findIndex((t) => t.id === id);
+  if (idx === -1) return;
+
+  const original = { ...localTasks.value[idx] };
+  localTasks.value[idx].completed = !localTasks.value[idx].completed; // optimistic
+
+  try {
+    await updateTaskStatus(id, { completed: localTasks.value[idx].completed });
+    // server will also refresh via composable; watcher will reconcile if needed
+  } catch (e) {
+    // revert on error
+    localTasks.value[idx] = original;
+    throw e;
+  }
+};
+
+/* --- Delete task (optimistic removal + revert if backend fails) --- */
+const toggleDelete = async (id) => {
+  const idx = localTasks.value.findIndex((t) => t.id === id);
+  if (idx === -1) return;
+
+  const backup = [...localTasks.value];
+  // optimistic remove
+  localTasks.value.splice(idx, 1);
+
+  try {
+    await deleteTask(id);
+    // success: composable will refresh backend state; watcher keeps in sync
+  } catch (e) {
+    // revert on error
+    localTasks.value = backup;
+    throw e;
+  }
+};
+
+/* --- Fetch on mount --- */
+onMounted(async () => {
+  await fetchTaskList();
+});
+
+/* --- active/completed counts using local tasks --- */
 const activeCount = computed(
   () => tasks.value.filter((task) => !task.completed).length
 );
@@ -161,7 +198,26 @@ const completedCount = computed(
                     {{ task.title }}
                   </p>
                 </div>
-                
+                <div class="flex-shrink-0 mr-4">
+                  <button
+                    @click="toggleDelete(task.id)"
+                    class="text-red-500 hover:text-red-700"
+                  >
+                    <svg
+                      class="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M6 18L18 6M6 6l12 12"
+                      ></path>
+                    </svg>
+                  </button>
+                </div>
               </div>
             </div>
           </div>
