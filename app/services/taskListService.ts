@@ -8,7 +8,8 @@ export const createTaskList = async (
   data: TaskListRequest,
   token: string
 ): Promise<TaskListResponse> => {
-  return await $fetch("http://localhost:5713/tasklists", {
+  const config = useRuntimeConfig();
+  return await $fetch(`${config.public.apiBase}/tasklists`, {
     method: "POST",
     headers: { Authorization: `Bearer ${token}` },
     body: data,
@@ -16,7 +17,8 @@ export const createTaskList = async (
 };
 
 export const getTaskList = async (token: string): Promise<TaskListResponse> => {
-  return await $fetch("http://localhost:5713/tasklists", {
+  const config = useRuntimeConfig();
+  return await $fetch(`${config.public.apiBase}/tasklists`, {
     method: "GET",
     headers: { Authorization: `Bearer ${token}` },
   });

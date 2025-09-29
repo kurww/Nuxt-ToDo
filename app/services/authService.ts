@@ -6,7 +6,8 @@ import type {
 } from "~/types/auth";
 
 export const login = async (data: LoginRequest): Promise<LoginResponse> => {
-  return await $fetch("http://localhost:5713/auth/login", {
+  const config = useRuntimeConfig();
+  return await $fetch(`${config.public.apiBase}/auth/login`, {
     method: "POST",
     body: data,
   });
@@ -15,7 +16,8 @@ export const login = async (data: LoginRequest): Promise<LoginResponse> => {
 export const register = async (
   data: RegisterRequest
 ): Promise<RegisterResponse> => {
-  return await $fetch("http://localhost:5713/auth/register", {
+  const config = useRuntimeConfig();
+  return await $fetch(`${config.public.apiBase}/auth/register`, {
     method: "POST",
     body: data,
   });
